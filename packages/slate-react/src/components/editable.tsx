@@ -45,7 +45,6 @@ import {
   IS_FIREFOX,
   IS_FIREFOX_LEGACY,
   IS_IOS,
-  IS_QQBROWSER,
   IS_SAFARI,
   IS_UC_MOBILE,
   IS_WECHATBROWSER,
@@ -55,6 +54,7 @@ import {
   EDITOR_TO_ELEMENT,
   EDITOR_TO_FORCE_RENDER,
   EDITOR_TO_PENDING_INSERTION_MARKS,
+  EDITOR_TO_PLACEHOLDER_ELEMENT,
   EDITOR_TO_USER_MARKS,
   EDITOR_TO_USER_SELECTION,
   EDITOR_TO_WINDOW,
@@ -121,6 +121,7 @@ export type EditableProps = {
   renderPlaceholder?: (props: RenderPlaceholderProps) => JSX.Element
   scrollSelectionIntoView?: (editor: ReactEditor, domRange: DOMRange) => void
   as?: React.ElementType
+  disableDefaultStyles?: boolean
 } & React.TextareaHTMLAttributes<HTMLDivElement>
 
 /**
@@ -138,8 +139,9 @@ export const Editable = (props: EditableProps) => {
     renderLeaf,
     renderPlaceholder = props => <DefaultPlaceholder {...props} />,
     scrollSelectionIntoView = defaultScrollSelectionIntoView,
-    style = {},
+    style: userStyle = {},
     as: Component = 'div',
+    disableDefaultStyles = false,
     ...attributes
   } = props
   const editor = useSlate()
@@ -518,7 +520,7 @@ export const Editable = (props: EditableProps) => {
           ) {
             const block = Editor.above(editor, {
               at: anchor.path,
-              match: n => Editor.isBlock(editor, n),
+              match: n => Element.isElement(n) && Editor.isBlock(editor, n),
             })
 
             if (block && Node.string(block[0]).includes('\t')) {
@@ -802,6 +804,10 @@ export const Editable = (props: EditableProps) => {
     })
   })
 
+  const placeholderHeight = EDITOR_TO_PLACEHOLDER_ELEMENT.get(
+    editor
+  )?.getBoundingClientRect()?.height
+
   return (
     <ReadOnlyContext.Provider value={readOnly}>
       <DecorateContext.Provider value={decorate}>
@@ -841,16 +847,24 @@ export const Editable = (props: EditableProps) => {
             suppressContentEditableWarning
             ref={ref}
             style={{
-              // Allow positioning relative to the editable element.
-              position: 'relative',
-              // Prevent the default outline styles.
-              outline: 'none',
-              // Preserve adjacent whitespace and new lines.
-              whiteSpace: 'pre-wrap',
-              // Allow words to break if they are too long.
-              wordWrap: 'break-word',
+              ...(disableDefaultStyles
+                ? {}
+                : {
+                    // Allow positioning relative to the editable element.
+                    position: 'relative',
+                    // Prevent the default outline styles.
+                    outline: 'none',
+                    // Preserve adjacent whitespace and new lines.
+                    whiteSpace: 'pre-wrap',
+                    // Allow words to break if they are too long.
+                    wordWrap: 'break-word',
+                    // Make the minimum height that of the placeholder.
+                    ...(placeholderHeight
+                      ? { minHeight: placeholderHeight }
+                      : {}),
+                  }),
               // Allow for passed-in styles to override anything.
-              ...style,
+              ...userStyle,
             }}
             onBeforeInput={useCallback(
               (event: React.FormEvent<HTMLDivElement>) => {
@@ -976,9 +990,12 @@ export const Editable = (props: EditableProps) => {
 
                   if (event.detail === TRIPLE_CLICK && path.length >= 1) {
                     let blockPath = path
-                    if (!Editor.isBlock(editor, node)) {
+                    if (
+                      !(Element.isElement(node) && Editor.isBlock(editor, node))
+                    ) {
                       const block = Editor.above(editor, {
-                        match: n => Editor.isBlock(editor, n),
+                        match: n =>
+                          Element.isElement(n) && Editor.isBlock(editor, n),
                         at: path,
                       })
 
@@ -1036,7 +1053,6 @@ export const Editable = (props: EditableProps) => {
                     !IS_SAFARI &&
                     !IS_FIREFOX_LEGACY &&
                     !IS_IOS &&
-                    !IS_QQBROWSER &&
                     !IS_WECHATBROWSER &&
                     !IS_UC_MOBILE &&
                     event.data
@@ -1099,7 +1115,8 @@ export const Editable = (props: EditableProps) => {
                       return
                     }
                     const inline = Editor.above(editor, {
-                      match: n => Editor.isInline(editor, n),
+                      match: n =>
+                        Element.isElement(n) && Editor.isInline(editor, n),
                       mode: 'highest',
                     })
                     if (inline) {
@@ -1173,7 +1190,7 @@ export const Editable = (props: EditableProps) => {
                   // default, and calling `preventDefault` hides the cursor.
                   const node = ReactEditor.toSlateNode(editor, event.target)
 
-                  if (Editor.isVoid(editor, node)) {
+                  if (Element.isElement(node) && Editor.isVoid(editor, node)) {
                     event.preventDefault()
                   }
                 }
@@ -1190,7 +1207,7 @@ export const Editable = (props: EditableProps) => {
                   const node = ReactEditor.toSlateNode(editor, event.target)
                   const path = ReactEditor.findPath(editor, node)
                   const voidMatch =
-                    Editor.isVoid(editor, node) ||
+                    (Element.isElement(node) && Editor.isVoid(editor, node)) ||
                     Editor.void(editor, { at: path, voids: true })
 
                   // If starting a drag on a void node, make sure it is selected
@@ -1277,7 +1294,7 @@ export const Editable = (props: EditableProps) => {
                 if (
                   !readOnly &&
                   !state.isUpdatingSelection &&
-                  ReactEditor.hasSelectableTarget(editor, event.target) &&
+                  ReactEditor.hasEditableTarget(editor, event.target) &&
                   !isEventHandled(event, attributes.onFocus)
                 ) {
                   const el = ReactEditor.toDOMNode(editor, editor)
@@ -1657,8 +1674,9 @@ const defaultScrollSelectionIntoView = (
   // This was affecting the selection of multiple blocks and dragging behavior,
   // so enabled only if the selection has been collapsed.
   if (
-    !editor.selection ||
-    (editor.selection && Range.isCollapsed(editor.selection))
+    domRange.getBoundingClientRect &&
+    (!editor.selection ||
+      (editor.selection && Range.isCollapsed(editor.selection)))
   ) {
     const leafEl = domRange.startContainer.parentElement!
     leafEl.getBoundingClientRect = domRange.getBoundingClientRect.bind(domRange)

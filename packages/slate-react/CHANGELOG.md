@@ -1,5 +1,47 @@
 # slate-react
 
+## 0.90.0
+
+### Minor Changes
+
+- [#5278](https://github.com/ianstormtaylor/slate/pull/5278) [`9c4097a2`](https://github.com/ianstormtaylor/slate/commit/9c4097a26fa92718e6f4fc1f984a70fb5af42ca2) Thanks [@kylemclean](https://github.com/kylemclean)! - Revert to using inline styles for default editor styles
+
+## 0.89.0
+
+### Minor Changes
+
+- [#5275](https://github.com/ianstormtaylor/slate/pull/5275) [`5bc69d8d`](https://github.com/ianstormtaylor/slate/commit/5bc69d8d657c57eef06aeaa1fa198840d36939c7) Thanks [@12joan](https://github.com/12joan)! - Firefox: fix wrong text highlighting with double-click
+
+### Patch Changes
+
+- [#5265](https://github.com/ianstormtaylor/slate/pull/5265) [`3cf51f4d`](https://github.com/ianstormtaylor/slate/commit/3cf51f4d88e8e91faa6ab5d1f2c5f8c8e505ae89) Thanks [@kylemclean](https://github.com/kylemclean)! - Improve compatibility for browsers that do not support ResizeObserver or :where selector
+
+## 0.88.2
+
+### Patch Changes
+
+- [#5259](https://github.com/ianstormtaylor/slate/pull/5259) [`d7de564d`](https://github.com/ianstormtaylor/slate/commit/d7de564d62848dd8e14535993083c5e9aa1bfacc) Thanks [@Jacfem](https://github.com/Jacfem)! - Updates the selection correctly in readonly shadowdom
+
+* [#5252](https://github.com/ianstormtaylor/slate/pull/5252) [`179d5c92`](https://github.com/ianstormtaylor/slate/commit/179d5c926eecfdb2b3d8a75c07cb89181c348ad1) Thanks [@frellica](https://github.com/frellica)! - remove qq browser from `beforeinput` compat list because it had updated its chromium core to version 94
+
+## 0.88.0
+
+### Minor Changes
+
+- [#5226](https://github.com/ianstormtaylor/slate/pull/5226) [`0141f683`](https://github.com/ianstormtaylor/slate/commit/0141f683659025c7e851c11274cf200da05fd31e) Thanks [@laufeyrut](https://github.com/laufeyrut)! - Check if getBoundingClientRect exist before trying to call bind on it. Makes unit testing experience agains Editable nicer
+
+## 0.87.1
+
+### Patch Changes
+
+- [#5223](https://github.com/ianstormtaylor/slate/pull/5223) [`120437d6`](https://github.com/ianstormtaylor/slate/commit/120437d61237eeb8df4ed0db92af31698e910eda) Thanks [@alex-vladut](https://github.com/alex-vladut)! - Fix issue preventing editing and copy/paste into editable voids
+
+## 0.87.0
+
+### Minor Changes
+
+- [#5206](https://github.com/ianstormtaylor/slate/pull/5206) [`96b7fcdb`](https://github.com/ianstormtaylor/slate/commit/96b7fcdbf98a7c8908f5d9613d9898cb24a8ae47) Thanks [@kylemclean](https://github.com/kylemclean)! - Use stylesheet for default styles on Editable components
+
 ## 0.86.0
 
 ### Minor Changes

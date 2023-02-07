@@ -242,15 +242,15 @@ export interface EditorInterface {
   insertFragment: (editor: Editor, fragment: Node[]) => void
   insertNode: (editor: Editor, node: Node) => void
   insertText: (editor: Editor, text: string) => void
-  isBlock: (editor: Editor, value: any) => value is Element
+  isBlock: (editor: Editor, value: Element) => boolean
   isEditor: (value: any) => value is Editor
   isEnd: (editor: Editor, point: Point, at: Location) => boolean
   isEdge: (editor: Editor, point: Point, at: Location) => boolean
   isEmpty: (editor: Editor, element: Element) => boolean
-  isInline: (editor: Editor, value: any) => value is Element
+  isInline: (editor: Editor, value: Element) => boolean
   isNormalizing: (editor: Editor) => boolean
   isStart: (editor: Editor, point: Point, at: Location) => boolean
-  isVoid: (editor: Editor, value: any) => value is Element
+  isVoid: (editor: Editor, value: Element) => boolean
   last: (editor: Editor, at: Location) => NodeEntry
   leaf: (
     editor: Editor,
@@ -358,7 +358,7 @@ export const Editor: EditorInterface = {
       match,
       reverse,
     })) {
-      if (Text.isText(n)) return
+      if (Text.isText(n)) continue
       if (Range.isRange(at)) {
         if (
           Path.isAncestor(p, at.anchor.path) &&
@@ -529,7 +529,9 @@ export const Editor: EditorInterface = {
    */
 
   hasBlocks(editor: Editor, element: Element): boolean {
-    return element.children.some(n => Editor.isBlock(editor, n))
+    return element.children.some(
+      n => Element.isElement(n) && Editor.isBlock(editor, n)
+    )
   },
 
   /**
@@ -604,8 +606,8 @@ export const Editor: EditorInterface = {
    * Check if a value is a block `Element` object.
    */
 
-  isBlock(editor: Editor, value: any): value is Element {
-    return Element.isElement(value) && !editor.isInline(value)
+  isBlock(editor: Editor, value: Element): boolean {
+    return !editor.isInline(value)
   },
 
   /**
@@ -684,8 +686,8 @@ export const Editor: EditorInterface = {
    * Check if a value is an inline `Element` object.
    */
 
-  isInline(editor: Editor, value: any): value is Element {
-    return Element.isElement(value) && editor.isInline(value)
+  isInline(editor: Editor, value: Element): boolean {
+    return editor.isInline(value)
   },
 
   /**
@@ -715,8 +717,8 @@ export const Editor: EditorInterface = {
    * Check if a value is a void `Element` object.
    */
 
-  isVoid(editor: Editor, value: any): value is Element {
-    return Element.isElement(value) && editor.isVoid(value)
+  isVoid(editor: Editor, value: Element): boolean {
+    return editor.isVoid(value)
   },
 
   /**
@@ -771,7 +773,7 @@ export const Editor: EditorInterface = {
 
       levels.push([n, p])
 
-      if (!voids && Editor.isVoid(editor, n)) {
+      if (!voids && Element.isElement(n) && Editor.isVoid(editor, n)) {
         break
       }
     }
@@ -817,11 +819,14 @@ export const Editor: EditorInterface = {
     if (anchor.offset === 0) {
       const prev = Editor.previous(editor, { at: path, match: Text.isText })
       const markedVoid = Editor.above(editor, {
-        match: n => Editor.isVoid(editor, n) && editor.markableVoid(n),
+        match: n =>
+          Element.isElement(n) &&
+          Editor.isVoid(editor, n) &&
+          editor.markableVoid(n),
       })
       if (!markedVoid) {
         const block = Editor.above(editor, {
-          match: n => Editor.isBlock(editor, n),
+          match: n => Element.isElement(n) && Editor.isBlock(editor, n),
         })
 
         if (prev && block) {
@@ -935,7 +940,8 @@ export const Editor: EditorInterface = {
       reverse,
       from,
       to,
-      pass: ([n]) => (voids ? false : Editor.isVoid(editor, n)),
+      pass: ([n]) =>
+        voids ? false : Element.isElement(n) && Editor.isVoid(editor, n),
     })
 
     const matches: NodeEntry<T>[] = []
@@ -1648,7 +1654,7 @@ export const Editor: EditorInterface = {
 
     const endBlock = Editor.above(editor, {
       at: end,
-      match: n => Editor.isBlock(editor, n),
+      match: n => Element.isElement(n) && Editor.isBlock(editor, n),
       voids,
     })
     const blockPath = endBlock ? endBlock[1] : []
@@ -1686,7 +1692,7 @@ export const Editor: EditorInterface = {
   ): NodeEntry<Element> | undefined {
     return Editor.above(editor, {
       ...options,
-      match: n => Editor.isVoid(editor, n),
+      match: n => Element.isElement(n) && Editor.isVoid(editor, n),
     })
   },
 
